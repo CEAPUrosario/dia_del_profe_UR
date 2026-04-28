@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Día del Profesor — Universidad del Rosario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-bg"></div>
+
+    <a href="#" class="logo-wrap">
+      <img src="https://github.com/CEAPUrosario/boletin_ceap/blob/main/img/UROSARIO_Logo_Horizontal_blanco%20sobre%20transp.png?raw=true"
+           alt="Universidad del Rosario" class="logo-img">
+    </a>
+
+    <div class="deco-star s1">★</div>
+    <div class="deco-star s2">✦</div>
+    <div class="deco-star s3">★</div>
+
+    <div class="hero-inner">
+      <p class="hero-eyebrow">15 de mayo</p>
+      <h1 class="hero-title">Feliz Día,<br><em>Profe</em></h1>
+      <p class="hero-sub">Sus estudiantes tienen algo que decirle ✨</p>
+      <div class="hero-actions">
+        <a href="#mensajes" class="btn btn-primary">Ver mensajes</a>
+        <a href="#escribir" class="btn btn-outline">Dejar un mensaje</a>
+      </div>
+    </div>
+
+    <div class="float-postit fp1">¡Gracias!</div>
+    <div class="float-postit fp2">★</div>
+    <div class="float-postit fp3">El mejor profe</div>
+    <div class="float-postit fp4">Lo quiero profe</div>
+    <div class="float-postit fp5">¡Increíble!</div>
+  </header>
+
+  <!-- SEARCH -->
+  <section class="search-section">
+    <div class="container">
+      <div class="search-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search" placeholder="Buscar a tu profe…" oninput="filterMessages()">
+      </div>
+    </div>
+  </section>
+
+  <!-- MESSAGES BOARD -->
+  <section class="board-section" id="mensajes">
+    <div class="container">
+      <h2 class="section-title">El tablero <span class="tag-chip">de mensajes</span></h2>
+      <div class="board" id="board">
+        <div class="loading-board">Cargando mensajes… ✦</div>
+      </div>
+      <p class="empty-state" id="empty-state" style="display:none">No hay mensajes para ese nombre todavía.</p>
+    </div>
+  </section>
+
+  <!-- WRITE FORM -->
+  <section class="form-section" id="escribir">
+    <div class="container">
+      <div class="form-card">
+        <div class="form-card-deco"></div>
+        <h2 class="form-title">Deja tu mensaje</h2>
+        <p class="form-subtitle">Cuéntale a tu profe lo que significa para ti</p>
+        <div class="form-body">
+          <div class="field">
+            <label>¿Para qué profesor?</label>
+            <select id="f-profe">
+              <option value="">Elige a tu profe…</option>
+            </select>
+            <small id="select-loading" style="font-size:12px;color:#7a7a9a;margin-top:5px;display:block">Cargando lista de profesores…</small>
+          </div>
+          <div class="field">
+            <label>Tu nombre (opcional)</label>
+            <input type="text" id="f-nombre" placeholder="Ej: Valeria, Estudiante de 3er año…">
+          </div>
+          <div class="field">
+            <label>Tu mensaje</label>
+            <textarea id="f-mensaje" placeholder="Escríbele desde el corazón…"></textarea>
+          </div>
+          <div class="field color-pick">
+            <label>Color del post-it</label>
+            <div class="color-swatches" id="swatches"></div>
+          </div>
+          <button class="btn btn-send" onclick="sendMessage()">Enviar mensaje ✦</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <img src="https://github.com/CEAPUrosario/boletin_ceap/blob/main/img/UROSARIO_Logo_Horizontal_blanco%20sobre%20transp.png?raw=true"
+         alt="Universidad del Rosario" style="height:28px;opacity:0.4;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
+    <p>Hecho con <span style="color:#e2687a">♥</span> por los estudiantes · Día del Profesor</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
