@@ -17,7 +17,7 @@ const db          = getFirestore(firebaseApp);
 
 // ─── CONFIGURACIÓN SHEET CSV ─────────────────────────────────────
 // Tu link ya está correctamente configurado como CSV
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ1qABPJ1JsLscAM1rVowVwSZQqvDMs2M1pCUOAHSS15tm5_JPxgyR6pPZ-bknvQ/pub?gid=1785077199&single=true&output=csv';
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ1qABPJ1JsLscAM1rVowVwSZQqvDMs2M1pCUOAHSS15tm5_JPxgyR6pPZ-bknvQ/pub?gid=1785077199&output=csv';
 
 // ─── VARIABLES GLOBALES ──────────────────────────────────────────
 let PROFESORES  = [];
