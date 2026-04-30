@@ -127,19 +127,34 @@ async function sendMessage() {
 // ─── CARGAR PROFESORES Y PARSEAR CSV ───
 async function loadProfesores() {
   const loadingEl = document.getElementById('select-loading');
+  
+  // Intentamos primero con el Proxy
   try {
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(SHEET_CSV_URL)}`;
-    const res   = await fetch(proxy);
-    const json  = await res.json();
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(SHEET_CSV_URL)}&timestamp=${Date.now()}`;
+    const res = await fetch(proxy);
+    if (!res.ok) throw new Error("Proxy falló");
+    const json = await res.json();
     
-    // Aquí usamos la función parseCSV que añadimos abajo
-    PROFESORES  = parseCSV(json.contents);
-    
+    PROFESORES = parseCSV(json.contents);
+    if (PROFESORES.length > 0) {
+      if (loadingEl) loadingEl.remove();
+      populateDatalist();
+      return; // Si funcionó, salimos
+    }
+  } catch (e) {
+    console.warn("Fallo con proxy, intentando directo...", e);
+  }
+
+  // Si el proxy falla, intentamos carga directa
+  try {
+    const resDirect = await fetch(SHEET_CSV_URL);
+    const text = await resDirect.text();
+    PROFESORES = parseCSV(text);
     if (loadingEl) loadingEl.remove();
     populateDatalist();
-  } catch(e) {
-    console.error('Error:', e);
-    if (loadingEl) loadingEl.textContent = '⚠ Usa la lista manual.';
+  } catch (e) {
+    console.error("Error crítico de carga:", e);
+    if (loadingEl) loadingEl.textContent = '⚠ No se pudo conectar con la lista de profesores.';
   }
 }
 
