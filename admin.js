@@ -4,6 +4,9 @@ import { getFirestore, collection, onSnapshot, doc, addDoc, deleteDoc,
          query, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } 
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey:            "AIzaSyAHKJ4qw9oDEZ2zhsBRB-0G0SaW6zkImNU",
   authDomain:        "mensaje-para-profesores.firebaseapp.com",
@@ -15,38 +18,37 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+const auth = getAuth(app); 
 // ─────────────────────────────────────────────────────────────────
-
-// 🔑 CAMBIA ESTA CONTRASEÑA antes de subir a GitHub
-const ADMIN_PASSWORD = 'rosario2025';
 
 let pendientes = [];
 let aprobados  = [];
 let currentTab = 'pendientes';
 
-// ─── LOGIN ───
-function checkPassword() {
-  const val = document.getElementById('pwd-input').value;
-  if (val === ADMIN_PASSWORD) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('admin-panel').style.display  = 'block';
-    startListeners();
-  } else {
+// ─── LOGIN SEGURO ───
+async function checkPassword() {
+  const password = document.getElementById('pwd-input').value;
+  const email = "ensenanzayaprendizaje@urosario.edu.co"; 
+
+  try {
+    // Firebase verifica el correo y la contraseña
+    await signInWithEmailAndPassword(auth, email, password);
+    showToast('Sesión iniciada');
+  } catch (e) {
+    console.error(e);
+    document.getElementById('pwd-error').textContent = "Contraseña incorrecta o error de acceso";
     document.getElementById('pwd-error').style.display = 'block';
-    document.getElementById('pwd-input').value = '';
   }
 }
 
 // ─── LISTENERS EN TIEMPO REAL ───
 function startListeners() {
-  // Pendientes
   onSnapshot(query(collection(db, 'pendientes'), orderBy('createdAt', 'desc')), snap => {
     pendientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateBadges();
     if (currentTab === 'pendientes') renderPendientes();
   });
 
-  // Aprobados
   onSnapshot(query(collection(db, 'mensajes'), orderBy('createdAt', 'desc')), snap => {
     aprobados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateBadges();
@@ -101,7 +103,7 @@ function renderAprobados() {
     </div>`).join('');
 }
 
-// ─── APROBAR ───
+// ─── ACCIONES (APROBAR, RECHAZAR, ELIMINAR) ───
 async function aprobar(id) {
   const m = pendientes.find(p => p.id === id);
   if (!m) return;
@@ -115,11 +117,10 @@ async function aprobar(id) {
       createdAt:   serverTimestamp()
     });
     await deleteDoc(doc(db, 'pendientes', id));
-    showToast('✅ Mensaje aprobado y publicado');
+    showToast('✅ Mensaje aprobado');
   } catch(e) { console.error(e); showToast('Error al aprobar'); }
 }
 
-// ─── RECHAZAR ───
 async function rechazar(id) {
   if (!confirm('¿Seguro que quieres rechazar este mensaje?')) return;
   try {
@@ -128,16 +129,15 @@ async function rechazar(id) {
   } catch(e) { console.error(e); showToast('Error al rechazar'); }
 }
 
-// ─── ELIMINAR APROBADO ───
 async function eliminar(id) {
-  if (!confirm('¿Eliminar este mensaje del tablero público?')) return;
+  if (!confirm('¿Eliminar este mensaje?')) return;
   try {
     await deleteDoc(doc(db, 'mensajes', id));
-    showToast('Mensaje eliminado del tablero');
+    showToast('Mensaje eliminado');
   } catch(e) { console.error(e); showToast('Error al eliminar'); }
 }
 
-// ─── TABS ───
+// ─── TABS Y UTILIDADES ───
 function setAdminTab(tab, btn) {
   currentTab = tab;
   document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
@@ -155,7 +155,6 @@ function updateBadges() {
     `${pendientes.length} pendiente${pendientes.length !== 1 ? 's' : ''} · ${aprobados.length} publicado${aprobados.length !== 1 ? 's' : ''}`;
 }
 
-// ─── TOAST ───
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -167,8 +166,22 @@ function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ─── CONTROL DE SESIÓN ───
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display  = 'block';
+    startListeners();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('admin-panel').style.display  = 'none';
+  }
+});
+
+// Hacer funciones globales para el HTML
 window.checkPassword = checkPassword;
 window.setAdminTab   = setAdminTab;
 window.aprobar       = aprobar;
 window.rechazar      = rechazar;
 window.eliminar      = eliminar;
+window.logout        = () => signOut(auth);
