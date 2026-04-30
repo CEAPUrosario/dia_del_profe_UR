@@ -51,7 +51,7 @@ a { text-decoration: none; color: inherit; }
   line-height: 0;
 }
 .logo-img {
-  height: 150px;
+  height: 44px;
   width: auto;
   object-fit: contain;
   opacity: 0.92;
@@ -85,8 +85,8 @@ a { text-decoration: none; color: inherit; }
   animation: twinkle 3s ease-in-out infinite;
 }
 .s1 { top: 18%; left: 12%; animation-delay: 0s; font-size: 14px; }
-.s2 { bottom: 8%; left: 50%; transform: translateX(-50%); animation-delay: 1.2s; font-size: 22px; }
-.s3 { top: 8%; right: 50%; transform: translateX(50%); animation-delay: 0.6s; font-size: 10px; }
+.s2 { top: 65%; left: 8%; animation-delay: 1.2s; font-size: 22px; }
+.s3 { top: 30%; right: 15%; animation-delay: 0.6s; font-size: 10px; }
 
 @keyframes twinkle {
   0%,100% { opacity: 0.15; transform: scale(1); }
@@ -192,20 +192,8 @@ a { text-decoration: none; color: inherit; }
 }
 .fp3 {
   background: var(--mint); color: var(--ink);
-  top: 40%; right: 5%; transform: rotate(-4deg);
+  top: 55%; right: 9%; transform: rotate(-4deg);
   animation-delay: 3s;
-}
-.fp4 {
-  background: var(--blue); color: var(--ink);
-  bottom: 40%; left: 6%; transform: rotate(5deg);
-  animation-delay: 0.8s;
-  --r: 5deg;
-}
-.fp5 {
-  background: var(--lavender); color: var(--ink);
-  top: 40%; left: 14%; transform: rotate(-6deg);
-  animation-delay: 2.2s;
-  --r: -6deg;
 }
 @keyframes floatY {
   0%,100% { transform: translateY(0) rotate(var(--r,4deg)); }
@@ -557,3 +545,114 @@ a { text-decoration: none; color: inherit; }
   padding: 3rem;
   grid-column: 1 / -1;
 }
+
+/* ─── FORM NOTE ─── */
+.form-note {
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-top: -8px;
+}
+
+/* ─── ADMIN PAGE ─── */
+.admin-body { background: #0f0f1a; min-height: 100vh; font-family: 'DM Sans', sans-serif; color: #fff; }
+.admin-login {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.admin-login-card {
+  background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 40px; width: 100%; max-width: 380px; text-align: center;
+}
+.admin-login-card h2 { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 6px; }
+.admin-login-card p  { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 24px; }
+.admin-login-card input {
+  width: 100%; padding: 12px 16px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07);
+  color: #fff; font-size: 15px; font-family: 'DM Sans', sans-serif;
+  outline: none; margin-bottom: 14px; text-align: center; letter-spacing: 0.1em;
+}
+.admin-login-card button {
+  width: 100%; padding: 12px; background: #fde87c; color: #1a1a2e;
+  border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.admin-header {
+  background: #1a1a2e; padding: 18px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.admin-header h1 { font-family: 'Playfair Display', serif; font-size: 20px; }
+.admin-header span { font-size: 13px; color: rgba(255,255,255,0.4); }
+.admin-content { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+.admin-tabs { display: flex; gap: 10px; margin-bottom: 28px; }
+.admin-tab {
+  padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
+  background: transparent; color: rgba(255,255,255,0.6); font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+.admin-tab.active { background: #fde87c; color: #1a1a2e; border-color: #fde87c; }
+.pending-card {
+  background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 20px 24px; margin-bottom: 14px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+.pending-card-body { flex: 1; }
+.pending-profe { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #fde87c; margin-bottom: 4px; font-weight: 500; }
+.pending-texto { font-family: 'Caveat', cursive; font-size: 18px; line-height: 1.5; margin-bottom: 6px; }
+.pending-desde { font-size: 12px; color: rgba(255,255,255,0.4); }
+.pending-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.btn-approve {
+  padding: 8px 18px; background: #b5f0d3; color: #0f3d2a;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+}
+.btn-reject {
+  padding: 8px 18px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; font-size: 13px;
+  cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+}
+.btn-approve:hover { background: #8fe8be; }
+.btn-reject:hover  { background: rgba(255,80,80,0.15); color: #ff8080; border-color: #ff8080; }
+.admin-empty { text-align: center; padding: 3rem; color: rgba(255,255,255,0.3); font-size: 15px; }
+.color-dot {
+  width: 14px; height: 14px; border-radius: 3px; display: inline-block;
+  margin-right: 6px; vertical-align: middle; flex-shrink: 0; margin-top: 3px;
+}
+
+/* ─── PANTALLA (modo proyección) ─── */
+.pantalla-body {
+  background: #0f0f1a; min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
+}
+.pantalla-header {
+  text-align: center; padding: 28px 24px 0;
+  position: relative;
+}
+.pantalla-logo { height: 36px; opacity: 0.7; margin-bottom: 12px; }
+.pantalla-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(28px, 4vw, 48px);
+  color: #fff; margin-bottom: 4px;
+}
+.pantalla-title em { color: #fde87c; font-style: italic; }
+.pantalla-sub { font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 24px; }
+.pantalla-board {
+  columns: 4 220px; column-gap: 18px;
+  padding: 24px 32px 40px;
+  max-width: 1400px; margin: 0 auto;
+}
+.pantalla-board .postit { margin-bottom: 18px; }
+.pantalla-empty {
+  text-align: center; padding: 4rem;
+  font-family: 'Caveat', cursive; font-size: 24px;
+  color: rgba(255,255,255,0.3);
+}
+.pantalla-badge {
+  position: fixed; bottom: 20px; right: 24px;
+  background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px; padding: 6px 14px;
+  font-size: 12px; color: rgba(255,255,255,0.4);
+}
+.pantalla-badge span { color: #fde87c; font-weight: 600; }
