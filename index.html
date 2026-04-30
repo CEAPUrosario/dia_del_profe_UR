@@ -26,7 +26,7 @@
     <div class="hero-inner">
       <p class="hero-eyebrow">15 de mayo</p>
       <h1 class="hero-title">Feliz Día,<br><em>Profe</em></h1>
-      <p class="hero-sub">Sus estudiantes tienen algo que decirle ✨</p>
+      <p class="hero-sub">Tus estudiantes tienen algo que decirte ✨</p>
       <div class="hero-actions">
         <a href="#mensajes" class="btn btn-primary">Ver mensajes</a>
         <a href="#escribir" class="btn btn-outline">Dejar un mensaje</a>
@@ -36,8 +36,6 @@
     <div class="float-postit fp1">¡Gracias!</div>
     <div class="float-postit fp2">★</div>
     <div class="float-postit fp3">El mejor profe</div>
-    <div class="float-postit fp4">Lo quiero profe</div>
-    <div class="float-postit fp5">¡Increíble!</div>
   </header>
 
   <!-- SEARCH -->
@@ -69,26 +67,35 @@
         <h2 class="form-title">Deja tu mensaje</h2>
         <p class="form-subtitle">Cuéntale a tu profe lo que significa para ti</p>
         <div class="form-body">
+
           <div class="field">
             <label>¿Para qué profesor?</label>
-            <select id="f-profe">
-              <option value="">Elige a tu profe…</option>
-            </select>
+            <!-- datalist: permite escribir O elegir de la lista -->
+            <input type="text" id="f-profe" list="profesores-list"
+                   placeholder="Escribe o elige el nombre del profe…"
+                   autocomplete="off">
+            <datalist id="profesores-list"></datalist>
             <small id="select-loading" style="font-size:12px;color:#7a7a9a;margin-top:5px;display:block">Cargando lista de profesores…</small>
           </div>
+
           <div class="field">
             <label>Tu nombre (opcional)</label>
             <input type="text" id="f-nombre" placeholder="Ej: Valeria, Estudiante de 3er año…">
           </div>
+
           <div class="field">
             <label>Tu mensaje</label>
             <textarea id="f-mensaje" placeholder="Escríbele desde el corazón…"></textarea>
           </div>
+
           <div class="field color-pick">
             <label>Color del post-it</label>
             <div class="color-swatches" id="swatches"></div>
           </div>
+
           <button class="btn btn-send" onclick="sendMessage()">Enviar mensaje ✦</button>
+
+          <p class="form-note">Tu mensaje será revisado antes de aparecer en el tablero 🔍</p>
         </div>
       </div>
     </div>
@@ -101,8 +108,6 @@
   </footer>
 
   <div class="toast" id="toast"></div>
-
-  <!-- Firebase -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
