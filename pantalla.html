@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tablero en Vivo — Día del Profesor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="pantalla-body">
+
+  <div class="pantalla-header">
+    <img src="https://github.com/CEAPUrosario/boletin_ceap/blob/main/img/UROSARIO_Logo_Horizontal_blanco%20sobre%20transp.png?raw=true"
+         alt="Universidad del Rosario" class="pantalla-logo">
+    <h1 class="pantalla-title">Feliz Día, <em>Profe</em></h1>
+    <p class="pantalla-sub">Mensajes de tus estudiantes ✨</p>
+  </div>
+
+  <div class="pantalla-board" id="pantalla-board">
+    <div class="pantalla-empty">Cargando mensajes… ✦</div>
+  </div>
+
+  <div class="pantalla-badge">
+    <span id="msg-count">0</span> mensajes en el tablero
+  </div>
+
+  <script type="module" src="pantalla.js"></script>
+</body>
+</html>

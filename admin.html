@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Día del Profesor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN -->
+  <div id="login-screen" class="admin-login">
+    <div class="admin-login-card">
+      <h2>Panel Admin</h2>
+      <p>Día del Profesor · Universidad del Rosario</p>
+      <input type="password" id="pwd-input" placeholder="Contraseña"
+             onkeydown="if(event.key==='Enter') checkPassword()">
+      <button onclick="checkPassword()">Entrar</button>
+      <p id="pwd-error" style="color:#ff8080;font-size:13px;margin-top:10px;display:none">
+        Contraseña incorrecta
+      </p>
+    </div>
+  </div>
+
+  <!-- PANEL (oculto hasta login) -->
+  <div id="admin-panel" style="display:none">
+    <div class="admin-header">
+      <h1>Panel de moderación</h1>
+      <span id="admin-counts"></span>
+    </div>
+
+    <div class="admin-content">
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="setAdminTab('pendientes', this)">
+          Pendientes <span id="badge-pendientes"></span>
+        </button>
+        <button class="admin-tab" onclick="setAdminTab('aprobados', this)">
+          Aprobados <span id="badge-aprobados"></span>
+        </button>
+      </div>
+
+      <div id="tab-pendientes"></div>
+      <div id="tab-aprobados" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
