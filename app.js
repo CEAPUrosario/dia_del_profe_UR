@@ -14,12 +14,12 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db          = getFirestore(firebaseApp);
-// ─────────────────────────────────────────────────────────────────
 
 // ─── CONFIGURACIÓN SHEET CSV ─────────────────────────────────────
-const SHEET_CSV_URL = 'TU_URL_AQUÍ';
-// ─────────────────────────────────────────────────────────────────
+// Tu link ya está correctamente configurado como CSV
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ1qABPJ1JsLscAM1rVowVwSZQqvDMs2M1pCUOAHSS15tm5_JPxgyR6pPZ-bknvQ/pub?gid=1785077199&single=true&output=csv';
 
+// ─── VARIABLES GLOBALES ──────────────────────────────────────────
 let PROFESORES  = [];
 let allMensajes = [];
 let likedIds    = new Set(JSON.parse(localStorage.getItem('liked') || '[]'));
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   listenMessages();
 });
 
-// ─── ESCUCHAR MENSAJES APROBADOS EN TIEMPO REAL ───
+// ─── ESCUCHAR MENSAJES APROBADOS ───
 function listenMessages() {
   const q = query(collection(db, 'mensajes'), orderBy('createdAt', 'desc'));
   onSnapshot(q, snapshot => {
@@ -69,7 +69,7 @@ function renderBoard(list) {
       <div class="postit-msg">${escapeHtml(m.texto)}</div>
       <div class="postit-footer">
         <div class="postit-from">${escapeHtml(m.desde)}</div>
-        <button class="heart-btn${liked ? ' liked' : ''}" onclick="toggleLike('${m.id}', this)" aria-label="Me gusta">
+        <button class="heart-btn${liked ? ' liked' : ''}" onclick="toggleLike('${m.id}', this)">
           <span class="heart-icon">${liked ? '❤️' : '🤍'}</span>
           <span class="heart-count">${m.likes || 0}</span>
         </button>
@@ -78,31 +78,29 @@ function renderBoard(list) {
   });
 }
 
-// ─── LIKE / UNLIKE ───
+// ─── LIKES ───
 async function toggleLike(id, btn) {
   const alreadyLiked = likedIds.has(id);
   const delta = alreadyLiked ? -1 : 1;
   const icon  = btn.querySelector('.heart-icon');
   const count = btn.querySelector('.heart-count');
   count.textContent = Math.max(0, (parseInt(count.textContent) || 0) + delta);
+  
   if (alreadyLiked) { likedIds.delete(id); btn.classList.remove('liked'); icon.textContent = '🤍'; }
   else              { likedIds.add(id);    btn.classList.add('liked');    icon.textContent = '❤️'; }
+  
   localStorage.setItem('liked', JSON.stringify([...likedIds]));
   try { await updateDoc(doc(db, 'mensajes', id), { likes: increment(delta) }); }
   catch(e) { console.error('Error like:', e); }
 }
 
-// ─── FILTER ───
-function filterMessages() { renderBoard(allMensajes); }
-
-// ─── ENVIAR MENSAJE (va a "pendientes", no directo a "mensajes") ───
+// ─── ENVIAR MENSAJE ───
 async function sendMessage() {
   const profeNombre = document.getElementById('f-profe').value.trim();
   const desde       = document.getElementById('f-nombre').value.trim() || 'Anónimo';
   const texto       = document.getElementById('f-mensaje').value.trim();
 
-  if (!profeNombre) { showToast('Por favor elige o escribe el nombre del profesor ✦'); return; }
-  if (!texto)       { showToast('El mensaje no puede estar vacío'); return; }
+  if (!profeNombre || !texto) { showToast('Completa los campos obligatorios ✦'); return; }
 
   const btn = document.querySelector('.btn-send');
   btn.disabled = true;
@@ -110,68 +108,60 @@ async function sendMessage() {
 
   try {
     await addDoc(collection(db, 'pendientes'), {
-      profeNombre,
-      desde,
-      texto,
+      profeNombre, desde, texto,
       color: selectedColor,
       createdAt: serverTimestamp()
     });
     document.getElementById('f-nombre').value  = '';
     document.getElementById('f-mensaje').value = '';
     document.getElementById('f-profe').value   = '';
-    showToast('¡Mensaje enviado! Pronto aparecerá en el tablero ✨');
+    showToast('¡Mensaje enviado para revisión! ✨');
   } catch(e) {
-    console.error('Error enviando:', e);
-    showToast('Hubo un error, intenta de nuevo.');
+    showToast('Error al enviar.');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Enviar mensaje ✦';
   }
 }
 
-// ─── CARGAR PROFESORES ───
+// ─── CARGAR PROFESORES Y PARSEAR CSV ───
 async function loadProfesores() {
   const loadingEl = document.getElementById('select-loading');
-  if (!SHEET_CSV_URL || SHEET_CSV_URL === 'TU_URL_AQUÍ') {
-    PROFESORES = [
-      { nombre: 'Profesora García',    materia: 'Matemáticas' },
-      { nombre: 'Profesor Martínez',   materia: 'Ciencias Naturales' },
-      { nombre: 'Profesora López',     materia: 'Lengua y Literatura' },
-      { nombre: 'Profesor Rodríguez',  materia: 'Historia' },
-      { nombre: 'Profesora Torres',    materia: 'Artes' },
-      { nombre: 'Profesor Ramírez',    materia: 'Filosofía' },
-    ];
-    if (loadingEl) loadingEl.remove();
-    populateDatalist();
-    return;
-  }
   try {
     const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(SHEET_CSV_URL)}`;
     const res   = await fetch(proxy);
     const json  = await res.json();
+    
+    // Aquí usamos la función parseCSV que añadimos abajo
     PROFESORES  = parseCSV(json.contents);
+    
     if (loadingEl) loadingEl.remove();
     populateDatalist();
   } catch(e) {
-    console.error('Error cargando profesores:', e);
-    if (loadingEl) loadingEl.textContent = '⚠ No se pudo cargar la lista.';
+    console.error('Error:', e);
+    if (loadingEl) loadingEl.textContent = '⚠ Usa la lista manual.';
   }
 }
 
-// ─── DATALIST (campo de texto con sugerencias) ───
+// ESTA ES LA FUNCIÓN QUE TE FALTABA
+function parseCSV(text) {
+  const lines = text.split('\n').slice(1); // Ignora la cabecera
+  return lines.map(line => {
+    // Maneja comas dentro de celdas si las hay, o una separación simple
+    const columns = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+    return {
+      nombre: columns[0]?.replace(/"/g, '').trim(),
+      materia: columns[1]?.replace(/"/g, '').trim()
+    };
+  }).filter(p => p.nombre);
+}
+
 function populateDatalist() {
   const dl = document.getElementById('profesores-list');
   if (!dl) return;
-  dl.innerHTML = '';
-  PROFESORES.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.nombre;
-    opt.label = p.materia || '';
-    dl.appendChild(opt);
-  });
+  dl.innerHTML = PROFESORES.map(p => `<option value="${p.nombre}">${p.materia || ''}</option>`).join('');
 }
 
-// ─── SWATCHES ───
 function buildSwatches() {
   const wrap = document.getElementById('swatches');
   POSTIT_COLORS.forEach(c => {
@@ -187,7 +177,6 @@ function buildSwatches() {
   });
 }
 
-// ─── TOAST ───
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -199,6 +188,7 @@ function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-window.filterMessages = filterMessages;
+// Funciones globales
+window.filterMessages = () => renderBoard(allMensajes);
 window.sendMessage    = sendMessage;
 window.toggleLike     = toggleLike;
