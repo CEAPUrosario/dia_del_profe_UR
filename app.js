@@ -158,18 +158,17 @@ async function sendMessage() {
 async function loadProfesores() {
   const loadingEl = document.getElementById('select-loading');
   try {
-    const sheetUrl = SHEET_CSV_URL + '&t=' + Date.now();
-const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(sheetUrl)}`;
-    const res = await fetch(proxy);
-    const json = await res.json();
-    PROFESORES = parseCSV(json.contents);
+    const res = await fetch(SHEET_CSV_URL);
+    if (!res.ok) throw new Error('Error cargando Sheet');
+    const text = await res.text();
+    PROFESORES = parseCSV(text);
     if (loadingEl) loadingEl.remove();
     populateDatalist();
-  } catch (e) {
-    console.error("Fallo carga:", e);
+  } catch(e) {
+    console.error('Error cargando profesores:', e);
+    if (loadingEl) loadingEl.textContent = '⚠ No se pudo cargar la lista.';
   }
 }
-
 function parseCSV(text) {
   const lines = text.split('\n').slice(1);
   return lines.map(line => {
