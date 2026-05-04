@@ -49,15 +49,25 @@
   </section>
 
   <!-- MESSAGES BOARD -->
-  <section class="board-section" id="mensajes">
-    <div class="container">
-      <h2 class="section-title">El tablero <span class="tag-chip">de mensajes</span></h2>
-      <div class="board" id="board">
-        <div class="loading-board">Cargando mensajes… ✦</div>
+<section class="board-section" id="mensajes">
+  <div class="container">
+    <h2 class="section-title">El tablero <span class="tag-chip">de mensajes</span></h2>
+    
+    <div class="slider-controls" style="display:flex; align-items:center; gap:20px;">
+      <!-- Triángulo Izquierda -->
+      <button class="nav-btn" onclick="changePage(-1)" style="background:none; border:none; font-size:40px; cursor:pointer; color:#1a1a2e;">◀</button>
+      
+      <div class="board" id="board" style="flex:1;">
+        <!-- Los 12 mensajes cargan aquí -->
       </div>
-      <p class="empty-state" id="empty-state" style="display:none">No hay mensajes para ese nombre todavía.</p>
+      
+      <!-- Triángulo Derecha -->
+      <button class="nav-btn" onclick="changePage(1)" style="background:none; border:none; font-size:40px; cursor:pointer; color:#1a1a2e;">▶</button>
     </div>
-  </section>
+
+    <p class="empty-state" id="empty-state" style="display:none">No hay mensajes para ese nombre todavía.</p>
+  </div>
+</section>
 
   <!-- WRITE FORM -->
   <section class="form-section" id="escribir">
