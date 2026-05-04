@@ -158,7 +158,8 @@ async function sendMessage() {
 async function loadProfesores() {
   const loadingEl = document.getElementById('select-loading');
   try {
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(SHEET_CSV_URL)}&timestamp=${Date.now()}`;
+    const sheetUrl = SHEET_CSV_URL + '&t=' + Date.now();
+const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(sheetUrl)}`;
     const res = await fetch(proxy);
     const json = await res.json();
     PROFESORES = parseCSV(json.contents);
