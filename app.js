@@ -15,14 +15,16 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db          = getFirestore(firebaseApp);
 
-// ─── CONFIGURACIÓN SHEET CSV ─────────────────────────────────────
-// Tu link ya está correctamente configurado como CSV
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ1qABPJ1JsLscAM1rVowVwSZQqvDMs2M1pCUOAHSS15tm5_JPxgyR6pPZ-bknvQ/pub?gid=1785077199&output=csv';
 
 // ─── VARIABLES GLOBALES ──────────────────────────────────────────
 let PROFESORES  = [];
 let allMensajes = [];
 let likedIds    = new Set(JSON.parse(localStorage.getItem('liked') || '[]'));
+
+// NUEVO: Variables para controlar la navegación de 12 en 12
+let currentPage = 0;
+const messagesPerPage = 12;
 
 const POSTIT_COLORS = ['#fde87c','#ffb3c6','#b5f0d3','#a8d8f8','#d4c5f9','#ffc9a8'];
 let selectedColor   = POSTIT_COLORS[0];
@@ -44,28 +46,34 @@ function listenMessages() {
   });
 }
 
-// ─── RENDER BOARD ───
+// ─── RENDER BOARD (MODIFICADO PARA PAGINACIÓN) ───
 function renderBoard(list) {
   const board = document.getElementById('board');
   const empty = document.getElementById('empty-state');
   const q     = document.getElementById('search').value.toLowerCase().trim();
+  
+  // Primero filtramos por búsqueda
   const filtered = q ? list.filter(m => (m.profeNombre || '').toLowerCase().includes(q)) : list;
 
   board.innerHTML = '';
   if (filtered.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  filtered.forEach((m, i) => {
-    const profe = PROFESORES.find(p => p.nombre === m.profeNombre) || { nombre: m.profeNombre, materia: '' };
+  // NUEVO: Lógica para mostrar solo los 12 de la página actual
+  const start = currentPage * messagesPerPage;
+  const end   = start + messagesPerPage;
+  const currentMessages = filtered.slice(start, end);
+
+  currentMessages.forEach((m, i) => {
     const liked = likedIds.has(m.id);
     const card  = document.createElement('div');
     card.className = 'postit';
     card.style.background     = m.color || POSTIT_COLORS[i % POSTIT_COLORS.length];
     card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg)`;
-    card.style.animationDelay = `${i * 0.05}s`;
+    
+    // Aquí mantenemos Nombre, Mensaje y LIKES
     card.innerHTML = `
-      <div class="postit-teacher">${escapeHtml(profe.nombre)}</div>
-      ${profe.materia ? `<div class="postit-subject">${escapeHtml(profe.materia)}</div>` : ''}
+      <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
       <div class="postit-msg">${escapeHtml(m.texto)}</div>
       <div class="postit-footer">
         <div class="postit-from">${escapeHtml(m.desde)}</div>
@@ -77,6 +85,22 @@ function renderBoard(list) {
     board.appendChild(card);
   });
 }
+
+// NUEVO: Función para cambiar de página (usada por los triángulos)
+window.changePage = (direction) => {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const filtered = q ? allMensajes.filter(m => (m.profeNombre || '').toLowerCase().includes(q)) : allMensajes;
+  
+  const totalPages = Math.ceil(filtered.length / messagesPerPage);
+  
+  currentPage += direction;
+
+  // Evitar salirse de los límites
+  if (currentPage < 0) currentPage = 0;
+  if (currentPage >= totalPages) currentPage = totalPages - 1;
+
+  renderBoard(allMensajes);
+};
 
 // ─── LIKES ───
 async function toggleLike(id, btn) {
@@ -94,11 +118,18 @@ async function toggleLike(id, btn) {
   catch(e) { console.error('Error like:', e); }
 }
 
-// ─── ENVIAR MENSAJE ───
+// ─── ENVIAR MENSAJE (CON LÍMITE DE 70 PALABRAS) ───
 async function sendMessage() {
   const profeNombre = document.getElementById('f-profe').value.trim();
   const desde       = document.getElementById('f-nombre').value.trim() || 'Anónimo';
   const texto       = document.getElementById('f-mensaje').value.trim();
+
+  // NUEVO: Validación de 70 palabras
+  const palabras = texto.split(/\s+/).filter(p => p.length > 0);
+  if (palabras.length > 70) {
+    showToast(`Mensaje muy largo (${palabras.length} palabras). Máximo 70.`);
+    return;
+  }
 
   if (!profeNombre || !texto) { showToast('Completa los campos obligatorios ✦'); return; }
 
@@ -115,7 +146,7 @@ async function sendMessage() {
     document.getElementById('f-nombre').value  = '';
     document.getElementById('f-mensaje').value = '';
     document.getElementById('f-profe').value   = '';
-    showToast('¡Mensaje enviado para revisión! ✨');
+    showToast('¡Enviado! Espera la moderación ✨');
   } catch(e) {
     showToast('Error al enviar.');
   } finally {
@@ -127,42 +158,21 @@ async function sendMessage() {
 // ─── CARGAR PROFESORES Y PARSEAR CSV ───
 async function loadProfesores() {
   const loadingEl = document.getElementById('select-loading');
-  
-  // Intentamos primero con el Proxy
   try {
     const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(SHEET_CSV_URL)}&timestamp=${Date.now()}`;
     const res = await fetch(proxy);
-    if (!res.ok) throw new Error("Proxy falló");
     const json = await res.json();
-    
     PROFESORES = parseCSV(json.contents);
-    if (PROFESORES.length > 0) {
-      if (loadingEl) loadingEl.remove();
-      populateDatalist();
-      return; // Si funcionó, salimos
-    }
-  } catch (e) {
-    console.warn("Fallo con proxy, intentando directo...", e);
-  }
-
-  // Si el proxy falla, intentamos carga directa
-  try {
-    const resDirect = await fetch(SHEET_CSV_URL);
-    const text = await resDirect.text();
-    PROFESORES = parseCSV(text);
     if (loadingEl) loadingEl.remove();
     populateDatalist();
   } catch (e) {
-    console.error("Error crítico de carga:", e);
-    if (loadingEl) loadingEl.textContent = '⚠ No se pudo conectar con la lista de profesores.';
+    console.error("Fallo carga:", e);
   }
 }
 
-// ESTA ES LA FUNCIÓN QUE TE FALTABA
 function parseCSV(text) {
-  const lines = text.split('\n').slice(1); // Ignora la cabecera
+  const lines = text.split('\n').slice(1);
   return lines.map(line => {
-    // Maneja comas dentro de celdas si las hay, o una separación simple
     const columns = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
     return {
       nombre: columns[0]?.replace(/"/g, '').trim(),
@@ -204,6 +214,9 @@ function escapeHtml(str) {
 }
 
 // Funciones globales
-window.filterMessages = () => renderBoard(allMensajes);
+window.filterMessages = () => {
+    currentPage = 0; // Reiniciar página al buscar
+    renderBoard(allMensajes);
+};
 window.sendMessage    = sendMessage;
 window.toggleLike     = toggleLike;
