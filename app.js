@@ -52,28 +52,28 @@ function renderBoard(list) {
   const empty = document.getElementById('empty-state');
   const q     = document.getElementById('search').value.toLowerCase().trim();
   
-  // Primero filtramos por búsqueda
   const filtered = q ? list.filter(m => (m.profeNombre || '').toLowerCase().includes(q)) : list;
 
   board.innerHTML = '';
   if (filtered.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  // NUEVO: Lógica para mostrar solo los 12 de la página actual
   const start = currentPage * messagesPerPage;
   const end   = start + messagesPerPage;
   const currentMessages = filtered.slice(start, end);
 
   currentMessages.forEach((m, i) => {
+    // REINTRODUCE ESTA LÍNEA:
+    const profe = PROFESORES.find(p => p.nombre === m.profeNombre) || { nombre: m.profeNombre, materia: '' };
+    
     const liked = likedIds.has(m.id);
     const card  = document.createElement('div');
     card.className = 'postit';
     card.style.background     = m.color || POSTIT_COLORS[i % POSTIT_COLORS.length];
-    card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg)`;
+    card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg) scale(0.98)`; // Pequeño ajuste visual para el slider
     
-    // Aquí mantenemos Nombre, Mensaje y LIKES
     card.innerHTML = `
-      <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
+      <div class="postit-teacher">${escapeHtml(profe.nombre)}</div>
       <div class="postit-msg">${escapeHtml(m.texto)}</div>
       <div class="postit-footer">
         <div class="postit-from">${escapeHtml(m.desde)}</div>
@@ -85,7 +85,6 @@ function renderBoard(list) {
     board.appendChild(card);
   });
 }
-
 // NUEVO: Función para cambiar de página (usada por los triángulos)
 window.changePage = (direction) => {
   const q = document.getElementById('search').value.toLowerCase().trim();
