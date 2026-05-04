@@ -18,53 +18,110 @@ const db  = getFirestore(app);
 
 const POSTIT_COLORS = ['#fde87c','#ffb3c6','#b5f0d3','#a8d8f8','#d4c5f9','#ffc9a8'];
 const ROTATIONS     = [-3, -2, -1, 0, 1, 2, 3, -2.5, 1.5, -1.5];
+const SEGUNDOS_POR_HOJA = 20;
 
-// Escuchar mensajes aprobados en tiempo real
+let allMensajes  = [];
+let currentPage  = 0;
+let totalPages   = 1;
+let rotateTimer  = null;
+
+// ─── ESCUCHAR MENSAJES EN TIEMPO REAL ───
 const q = query(collection(db, 'mensajes'), orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
-  const mensajes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderBoard(mensajes);
+  allMensajes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  document.getElementById('msg-count').textContent = allMensajes.length;
+  currentPage = 0;
+  renderPage();
+  startRotation();
 });
 
-function renderBoard(list) {
+// ─── RENDERIZAR PÁGINA ACTUAL ───
+function renderPage() {
   const board = document.getElementById('pantalla-board');
-  const count = document.getElementById('msg-count');
-  count.textContent = list.length;
 
-  if (list.length === 0) {
+  if (allMensajes.length === 0) {
     board.innerHTML = '<div class="pantalla-empty">Aún no hay mensajes… ¡sé el primero! ✦</div>';
     return;
   }
 
-  // Solo re-renderizar tarjetas nuevas para no perder animaciones
-  const existingIds = new Set([...board.querySelectorAll('.postit')].map(el => el.dataset.id));
-  const newIds      = new Set(list.map(m => m.id));
+  // Calcular cuántas tarjetas caben midiendo el espacio disponible
+  const boardH    = board.clientHeight || window.innerHeight - 220;
+  const boardW    = board.clientWidth  || window.innerWidth  - 64;
+  const cardH     = 200; // altura estimada por tarjeta
+  const cardW     = 260; // ancho estimado por tarjeta
+  const cols      = Math.max(1, Math.floor(boardW / (cardW + 18)));
+  const rows      = Math.max(1, Math.floor(boardH / (cardH + 18)));
+  const perPage   = cols * rows;
 
-  // Eliminar las que ya no están
-  board.querySelectorAll('.postit').forEach(el => {
-    if (!newIds.has(el.dataset.id)) el.remove();
-  });
+  totalPages = Math.max(1, Math.ceil(allMensajes.length / perPage));
 
-  // Agregar las nuevas al principio
-  list.forEach((m, i) => {
-    if (existingIds.has(m.id)) return; // ya existe, no la duplicamos
-    const card = document.createElement('div');
-    card.className     = 'postit';
-    card.dataset.id    = m.id;
-    card.style.background     = m.color || POSTIT_COLORS[i % POSTIT_COLORS.length];
-    card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg)`;
-    card.style.animationDelay = '0s';
-    card.innerHTML = `
-      <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
-      <div class="postit-msg">${escapeHtml(m.texto)}</div>
-      <div class="postit-footer">
-        <div class="postit-from">${escapeHtml(m.desde)}</div>
-        ${m.likes ? `<span style="font-size:13px;opacity:0.6">❤️ ${m.likes}</span>` : ''}
-      </div>`;
-    board.insertBefore(card, board.firstChild);
-  });
+  // Asegurar que currentPage no se salga
+  if (currentPage >= totalPages) currentPage = 0;
+
+  const start = currentPage * perPage;
+  const slice = allMensajes.slice(start, start + perPage);
+
+  // Actualizar indicador de hoja
+  document.getElementById('page-indicator').textContent =
+    totalPages > 1 ? `Hoja ${currentPage + 1} de ${totalPages}` : '';
+
+  // Renderizar tarjetas con animación de salida/entrada
+  board.style.opacity = '0';
+  board.style.transition = 'opacity 0.5s';
+
+  setTimeout(() => {
+    board.innerHTML = '';
+    slice.forEach((m, i) => {
+      const card = document.createElement('div');
+      card.className = 'postit';
+      card.dataset.id = m.id;
+      card.style.background     = m.color || POSTIT_COLORS[i % POSTIT_COLORS.length];
+      card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg)`;
+      card.style.animationDelay = `${i * 0.04}s`;
+      card.innerHTML = `
+        <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
+        <div class="postit-msg">${escapeHtml(m.texto)}</div>
+        <div class="postit-footer">
+          <div class="postit-from">${escapeHtml(m.desde)}</div>
+          ${m.likes ? `<span style="font-size:13px;opacity:0.6">❤️ ${m.likes}</span>` : ''}
+        </div>`;
+      board.appendChild(card);
+    });
+    board.style.opacity = '1';
+  }, 400);
 }
 
+// ─── ROTACIÓN AUTOMÁTICA CADA 20 SEGUNDOS ───
+function startRotation() {
+  if (rotateTimer) clearInterval(rotateTimer);
+  if (totalPages <= 1) return; // no rotar si todo cabe en una hoja
+  rotateTimer = setInterval(() => {
+    currentPage = (currentPage + 1) % totalPages;
+    renderPage();
+    updateProgressBar();
+  }, SEGUNDOS_POR_HOJA * 1000);
+}
+
+// ─── BARRA DE PROGRESO ───
+function updateProgressBar() {
+  const bar = document.getElementById('progress-bar');
+  if (!bar) return;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  setTimeout(() => {
+    bar.style.transition = `width ${SEGUNDOS_POR_HOJA}s linear`;
+    bar.style.width = '100%';
+  }, 50);
+}
+
+// Re-calcular al redimensionar ventana
+window.addEventListener('resize', () => {
+  currentPage = 0;
+  renderPage();
+});
+
 function escapeHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
