@@ -41,9 +41,21 @@ function listenMessages() {
   onSnapshot(q, snapshot => {
     allMensajes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderBoard(allMensajes);
+  import { /* ... otras importaciones */, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+function listenMessages() {
+  // Solo pedimos los 12 más recientes a Firebase
+  const q = query(
+    collection(db, 'mensajes'), 
+    orderBy('createdAt', 'desc'), 
+    limit(12) 
+  );
+  
+  onSnapshot(q, snapshot => {
+    allMensajes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderBoard(allMensajes);
   });
 }
-
 // ─── RENDER BOARD ───
 function renderBoard(list) {
   const board = document.getElementById('board');
