@@ -24,9 +24,9 @@
     <div class="deco-star s3">★</div>
 
     <div class="hero-inner">
-      <p class="hero-eyebrow">15 de mayo</p>
+      <p class="hero-eyebrow">15 de mayo de 2026</p>
       <h1 class="hero-title">Feliz Día,<br><em>Profe</em></h1>
-      <p class="hero-sub">Tus estudiantes tienen algo que decirte ✨</p>
+      <p class="hero-sub">✨ Un mensaje puede parecer pequeño, pero deja huella. Escribe el tuyo y reconoce a quien marcó tu camino ✨</p>
       <div class="hero-actions">
         <a href="#mensajes" class="btn btn-primary">Ver mensajes</a>
         <a href="#escribir" class="btn btn-outline">Dejar un mensaje</a>
@@ -36,6 +36,9 @@
     <div class="float-postit fp1">¡Gracias!</div>
     <div class="float-postit fp2">★</div>
     <div class="float-postit fp3">El mejor profe</div>
+    <div class="float-postit fp4">¡Gracias profe!</div>
+<div class="float-postit fp5">Inspiras ✨</div>
+    <div class="float-postit fp6">★</div>
   </header>
 
   <!-- SEARCH -->
@@ -90,7 +93,7 @@
 
           <div class="field">
             <label>Tu nombre (opcional)</label>
-            <input type="text" id="f-nombre" placeholder="Ej: Valeria, Estudiante de 3er año…">
+            <input type="text" id="f-nombre" placeholder="Ej: Valeria, Estudiante de medicina">
           </div>
 
           <div class="field">
@@ -99,23 +102,27 @@
           </div>
 
           <div class="field color-pick">
-            <label>Color del post-it</label>
+            <label>Escoge el color del post-it</label>
             <div class="color-swatches" id="swatches"></div>
           </div>
 
           <button class="btn btn-send" onclick="sendMessage()">Enviar mensaje ✦</button>
 
-          <p class="form-note">Tu mensaje será revisado antes de aparecer en el tablero 🔍</p>
+          <p class="form-note">¿No está tu mensaje? No te preocupes, tu mensaje será revisado antes de aparecer en el tablero 🔍</p>
         </div>
       </div>
     </div>
   </section>
 
-  <footer class="site-footer">
-    <img src="https://github.com/CEAPUrosario/boletin_ceap/blob/main/img/UROSARIO_Logo_Horizontal_blanco%20sobre%20transp.png?raw=true"
-         alt="Universidad del Rosario" style="height:28px;opacity:0.4;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
-    <p>Hecho con <span style="color:#e2687a">♥</span> por los estudiantes · Día del Profesor</p>
-  </footer>
+<footer class="site-footer">
+  <p class="footer-line">
+    Hecho con el <span class="heart">♥</span> por el
+    <img src="https://github.com/CEAPUrosario/boletin_ceap/blob/main/img/Logo%20v3.png?raw=true"
+         alt="CEAP"
+         class="footer-logo-inline">
+    para nuestros profes.
+  </p>
+</footer>
 
   <div class="toast" id="toast"></div>
   <script type="module" src="app.js"></script>
