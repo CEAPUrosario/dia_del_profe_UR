@@ -28,7 +28,7 @@ let currentTab = 'pendientes';
 // ─── LOGIN SEGURO ───
 async function checkPassword() {
   const password = document.getElementById('pwd-input').value;
-  const email = "ensenanzayaprendizaje@urosario.edu.co"; 
+  const email = "ensenanza.aprendizaje.ceap@gmail.com"; 
 
   try {
     // Firebase verifica el correo y la contraseña
