@@ -132,3 +132,25 @@
   <script type="module" src="pantalla.js"></script>
 </body>
 </html>
+.postit{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+
+.postit-msg{
+  flex:1;
+  overflow-y:auto;
+  min-height:0;
+  padding-right:4px;
+}
+
+/* Scroll discreto */
+.postit-msg::-webkit-scrollbar{
+  width:4px;
+}
+
+.postit-msg::-webkit-scrollbar-thumb{
+  background:rgba(0,0,0,0.15);
+  border-radius:4px;
+}
