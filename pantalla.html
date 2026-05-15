@@ -1,8 +1,15 @@
+HTML:
+
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Tablero en Vivo — Día del Profesor</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,173 +19,167 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
+
     /* Layout fijo para proyección — sin scroll */
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+
 
     .pantalla-body {
+
       display: flex;
+
       flex-direction: column;
+
       height: 100vh;
+
     }
 
     .pantalla-header {
+
       flex-shrink: 0;
+
       padding: 16px 24px 8px;
+
     }
 
     .pantalla-board {
+
       flex: 1;
-      overflow: hidden;
+
+      overflow: hidden;       /* nunca hace scroll */
+
       padding: 8px 28px 0;
+
       transition: opacity 0.5s;
 
       /* grid automático que llena el espacio disponible */
+
       display: grid;
+
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+
       grid-auto-rows: minmax(160px, 1fr);
+
       gap: 16px;
+
       align-content: start;
+
     }
 
     .pantalla-board .postit {
-      margin-bottom: 0;
+
+      margin-bottom: 0;   /* el gap del grid maneja el espacio */
+
     }
 
     .pantalla-footer {
+
       flex-shrink: 0;
+
       display: flex;
+
       align-items: center;
+
       justify-content: space-between;
+
       padding: 6px 28px 10px;
+
     }
 
     /* Barra de progreso */
+
     .progress-track {
+
       flex: 1;
+
       height: 3px;
+
       background: rgba(255,255,255,0.1);
+
       border-radius: 2px;
+
       margin: 0 16px;
+
       overflow: hidden;
+
     }
 
     #progress-bar {
+
       height: 100%;
+
       width: 0%;
+
       background: #fde87c;
+
       border-radius: 2px;
+
     }
 
     #page-indicator {
+
       font-size: 12px;
+
       color: rgba(255,255,255,0.3);
+
       white-space: nowrap;
-    }
 
-    .pantalla-search{
-      display:flex;
-      justify-content:center;
-      margin-top:12px;
-    }
-
-    #search-input{
-      width:320px;
-      max-width:90%;
-      padding:10px 16px;
-      border:none;
-      border-radius:999px;
-      background:rgba(255,255,255,0.12);
-      color:white;
-      font-size:14px;
-      outline:none;
-      backdrop-filter: blur(8px);
-    }
-
-    #search-input::placeholder{
-      color:rgba(255,255,255,0.55);
-    }
-
-    /* 👇 NUEVO: permitir scroll interno en mensajes largos */
-    .postit{
-      display:flex;
-      flex-direction:column;
-      min-height:0;
-    }
-
-    .postit-msg{
-      flex:1;
-      overflow-y:auto;
-      min-height:0;
-      padding-right:4px;
-    }
-
-    /* Scroll discreto */
-    .postit-msg::-webkit-scrollbar{
-      width:4px;
-    }
-
-    .postit-msg::-webkit-scrollbar-thumb{
-      background:rgba(0,0,0,0.15);
-      border-radius:4px;
     }
 
   </style>
+
 </head>
 
 <body class="pantalla-body">
 
+
+
   <div class="pantalla-header">
 
-    <img
-      src="https://github.com/CEAPUrosario/boletin_ceap/blob/main/img/UROSARIO_Logo_Horizontal_blanco%20sobre%20transp.png?raw=true"
-      alt="Universidad del Rosario"
-      class="pantalla-logo"
-    >
+    <img src="https://github.com/CEAPUrosario/boletin_ceap/blob/main/img/UROSARIO_Logo_Horizontal_blanco%20sobre%20transp.png?raw=true"
 
-    <h1 class="pantalla-title">
-      Feliz Día, <em>Profe</em>
-    </h1>
+         alt="Universidad del Rosario" class="pantalla-logo">
 
-    <p class="pantalla-sub">
-      Mensajes de tus estudiantes ✨
-    </p>
+    <h1 class="pantalla-title">Feliz Día, <em>Profe</em></h1>
 
-    <div class="pantalla-search">
-      <input
-        type="text"
-        id="search-input"
-        placeholder="Buscar profesor..."
-        autocomplete="off"
-      >
-    </div>
+    <p class="pantalla-sub">Mensajes de tus estudiantes ✨</p>
 
   </div>
+
+
 
   <div class="pantalla-board" id="pantalla-board">
-    <div class="pantalla-empty">
-      Cargando mensajes… ✦
-    </div>
+
+    <div class="pantalla-empty">Cargando mensajes… ✦</div>
+
   </div>
+
+
 
   <div class="pantalla-footer">
 
     <div class="pantalla-badge">
-      <span id="msg-count">0</span>
-      mensajes en el tablero
+
+      <span id="msg-count">0</span> mensajes en el tablero
+
     </div>
 
     <div class="progress-track">
+
       <div id="progress-bar"></div>
+
     </div>
 
     <div id="page-indicator"></div>
 
   </div>
 
+
+
   <script type="module" src="pantalla.js"></script>
 
 </body>
+
 </html>
