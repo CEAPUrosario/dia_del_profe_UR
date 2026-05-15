@@ -119,63 +119,74 @@ function renderPage() {
 
   const startIndex = pageStartIndices[currentPage];
 
-  // Animación de salida
+  // Fade out
+  board.style.transition = 'opacity 0.3s ease';
   board.style.opacity    = '0';
-  board.style.transition = 'opacity 0.45s ease';
 
+  // Esperar que termine el fade, luego poblar y medir
   setTimeout(() => {
     board.innerHTML = '';
-    board.style.opacity = '1';
 
-    const boardBottom = board.getBoundingClientRect().bottom;
-    let lastFit = startIndex - 1;
-
+    // Insertar todas las tarjetas de esta página candidate (invisible)
+    // Las iremos removiendo si no caben
+    const cards = [];
     for (let i = startIndex; i < filteredMensajes.length; i++) {
-      const m    = filteredMensajes[i];
-      const card = createCard(m, i);
-
-      // Invisible mientras medimos
+      const card = createCard(filteredMensajes[i], i);
       card.style.visibility = 'hidden';
       board.appendChild(card);
+      cards.push({ card, i });
+    }
 
-      // Medir si la tarjeta desborda el board
-      const cardBottom = card.getBoundingClientRect().bottom;
+    // Esperar un frame para que el navegador calcule el layout real
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const boardBottom = board.getBoundingClientRect().bottom;
+        let cutAt = -1; // índice donde cortamos
 
-      if (cardBottom > boardBottom + 4) {
-        // Esta tarjeta no cabe — removerla y cortar aquí
-        board.removeChild(card);
+        for (const { card, i } of cards) {
+          const cardBottom = card.getBoundingClientRect().bottom;
 
-        // Guardar inicio de la siguiente página si no existe
-        if (!pageStartIndices[currentPage + 1]) {
-          pageStartIndices[currentPage + 1] = i;
+          if (cardBottom > boardBottom + 4) {
+            // A partir de aquí no caben — remover estas y las siguientes
+            cutAt = i;
+            break;
+          }
+
+          // Cabe: hacerla visible
+          card.style.visibility = '';
         }
-        break;
-      }
 
-      // Cabe: hacerla visible
-      card.style.visibility = '';
-      lastFit = i;
-    }
+        if (cutAt !== -1) {
+          // Remover tarjetas que no caben
+          for (const { card, i } of cards) {
+            if (i >= cutAt) board.removeChild(card);
+          }
+          // Guardar inicio de la siguiente página
+          if (!pageStartIndices[currentPage + 1]) {
+            pageStartIndices[currentPage + 1] = cutAt;
+          }
+        } else {
+          // Todas cupieron — mostrarlas todas
+          for (const { card } of cards) card.style.visibility = '';
+          pageStartIndices = pageStartIndices.slice(0, currentPage + 1);
+        }
 
-    // Recalcular totalPages basado en lo que sabemos
-    // Si llegamos al final sin cortar, no hay página siguiente
-    const allFit = lastFit === filteredMensajes.length - 1;
-    if (allFit) {
-      // Truncar pageStartIndices por si sobraban entradas de renders anteriores
-      pageStartIndices = pageStartIndices.slice(0, currentPage + 1);
-    }
+        const allFit = cutAt === -1;
+        totalPages = allFit
+          ? pageStartIndices.length
+          : Math.max(pageStartIndices.length, currentPage + 2);
 
-    // totalPages = páginas conocidas + 1 estimada si hay más mensajes
-    totalPages = allFit
-      ? pageStartIndices.length
-      : Math.max(pageStartIndices.length, currentPage + 2);
+        pageIndicator.textContent = totalPages > 1
+          ? `Hoja ${currentPage + 1} de ${totalPages}`
+          : '';
 
-    pageIndicator.textContent = totalPages > 1
-      ? `Hoja ${currentPage + 1} de ${totalPages}`
-      : '';
+        updateNavButtons();
 
-    updateNavButtons();
-  }, 380);
+        // Fade in
+        board.style.opacity = '1';
+      });
+    });
+  }, 320);
 }
 
 // ─── ACTUALIZAR BOTONES DE NAVEGACIÓN ───
