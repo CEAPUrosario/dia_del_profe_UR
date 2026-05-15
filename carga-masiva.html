@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carga Masiva — Día del Profesor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <!-- SheetJS para leer Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #13101e;
+      --surface:  #1e1830;
+      --border:   rgba(255,255,255,0.1);
+      --accent:   #fde87c;
+      --accent2:  #b5f0d3;
+      --danger:   #ffb3c6;
+      --text:     #f0edf8;
+      --muted:    rgba(255,255,255,0.38);
+      --radius:   12px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 24px 64px;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; }
+
+    /* ── Encabezado ── */
+    .page-header { margin-bottom: 36px; }
+    .page-header h1 {
+      font-family: 'Caveat', cursive;
+      font-size: 36px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .page-header p { color: var(--muted); font-size: 14px; }
+
+    /* ── Zona de drop ── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 28px;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--accent);
+      background: rgba(253,232,124,0.05);
+    }
+    .drop-zone svg { margin-bottom: 12px; opacity: 0.5; }
+    .drop-zone p  { color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .drop-zone strong { color: var(--accent); cursor: pointer; }
+    #file-input { display: none; }
+
+    /* ── Plantilla hint ── */
+    .template-hint {
+      background: rgba(181,240,211,0.07);
+      border: 1px solid rgba(181,240,211,0.2);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: var(--accent2);
+      margin-bottom: 28px;
+      line-height: 1.7;
+    }
+    .template-hint code {
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      color: #fff;
+    }
+
+    /* ── Tabla de vista previa ── */
+    .preview-section { display: none; }
+    .preview-section.visible { display: block; }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead { background: rgba(255,255,255,0.05); }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 500;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: top;
+      max-width: 280px;
+      word-break: break-word;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr.row-error td { background: rgba(255,179,198,0.07); }
+    tr.row-ok   td { background: rgba(181,240,211,0.04); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-ok     { background: rgba(181,240,211,0.15); color: var(--accent2); }
+    .badge-error  { background: rgba(255,179,198,0.15); color: var(--danger);  }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .summary-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 6px 16px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .summary-pill span { font-weight: 600; }
+
+    /* ── Botón de subida ── */
+    .upload-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #1a1025;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .upload-btn:hover   { opacity: 0.88; transform: translateY(-1px); }
+    .upload-btn:active  { transform: translateY(0); }
+    .upload-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── Log de progreso ── */
+    .log-box {
+      margin-top: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      font-size: 13px;
+      line-height: 1.8;
+      display: none;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .log-box.visible { display: block; }
+    .log-ok    { color: var(--accent2); }
+    .log-error { color: var(--danger);  }
+    .log-info  { color: var(--muted);   }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(26,16,37,0.3);
+      border-top-color: #1a1025;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .spinner.visible { display: inline-block; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>📋 Carga Masiva de Mensajes</h1>
+    <p>Importa mensajes desde un archivo Excel (.xlsx / .xls) directo a Firebase</p>
+  </div>
+
+  <!-- Instrucciones de columnas -->
+  <div class="template-hint">
+    📌 <strong>Formato esperado del Excel</strong> — el archivo debe tener estas columnas (en cualquier orden):<br>
+    <code>profeNombre</code> · <code>texto</code> · <code>desde</code> · <code>color</code> (opcional, ej: <code>#fde87c</code>)<br>
+    La primera fila debe ser el encabezado. Las filas sin <code>profeNombre</code> o sin <code>texto</code> serán omitidas.
+  </div>
+
+  <!-- Drop zone -->
+  <div class="drop-zone" id="drop-zone">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p>Arrastra tu archivo Excel aquí<br>o <strong id="browse-link">haz clic para seleccionar</strong></p>
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+  </div>
+
+  <!-- Vista previa -->
+  <div class="preview-section" id="preview-section">
+    <p class="section-title">Vista previa — primeras 50 filas</p>
+
+    <div class="summary-bar" id="summary-bar"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Profe</th>
+            <th>Mensaje</th>
+            <th>Desde</th>
+            <th>Color</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+
+    <div class="btn-row">
+      <button class="upload-btn" id="upload-btn">
+        <span class="spinner" id="spinner"></span>
+        <span id="upload-label">⬆ Subir a Firebase</span>
+      </button>
+      <button class="reset-btn" id="reset-btn">Cancelar / nueva carga</button>
+    </div>
+
+    <div class="log-box" id="log-box"></div>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyAHKJ4qw9oDEZ2zhsBRB-0G0SaW6zkImNU",
+  authDomain:        "mensaje-para-profesores.firebaseapp.com",
+  projectId:         "mensaje-para-profesores",
+  storageBucket:     "mensaje-para-profesores.firebasestorage.app",
+  messagingSenderId: "93773928576",
+  appId:             "1:93773928576:web:f2d20b7ecd11e284e2ee65"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const POSTIT_COLORS = ['#fde87c','#ffb3c6','#b5f0d3','#a8d8f8','#d4c5f9','#ffc9a8'];
+
+// ── DOM refs ──
+const dropZone      = document.getElementById('drop-zone');
+const fileInput     = document.getElementById('file-input');
+const browseLink    = document.getElementById('browse-link');
+const previewSection= document.getElementById('preview-section');
+const previewBody   = document.getElementById('preview-body');
+const summaryBar    = document.getElementById('summary-bar');
+const uploadBtn     = document.getElementById('upload-btn');
+const uploadLabel   = document.getElementById('upload-label');
+const spinner       = document.getElementById('spinner');
+const logBox        = document.getElementById('log-box');
+const resetBtn      = document.getElementById('reset-btn');
+
+let parsedRows = []; // filas válidas listas para subir
+
+// ── Drag & drop ──
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+browseLink.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+// ── Leer Excel ──
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const workbook  = XLSX.read(e.target.result, { type: 'array' });
+    const sheet     = workbook.Sheets[workbook.SheetNames[0]];
+    const rawRows   = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    // Normalizar claves (trim + lowercase para comparar)
+    const normalize = obj => {
+      const out = {};
+      for (const k in obj) out[k.trim()] = String(obj[k]).trim();
+      return out;
+    };
+
+    const rows = rawRows.map(normalize);
+    renderPreview(rows);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Vista previa ──
+function renderPreview(rows) {
+  previewBody.innerHTML = '';
+  parsedRows = [];
+  let okCount = 0, errCount = 0;
+
+  const previewRows = rows.slice(0, 50);
+
+  previewRows.forEach((row, i) => {
+    const profe  = row['profeNombre'] || '';
+    const texto  = row['texto']       || '';
+    const desde  = row['desde']       || '';
+    const color  = row['color']       || POSTIT_COLORS[i % POSTIT_COLORS.length];
+
+    const isValid = profe.length > 0 && texto.length > 0;
+    if (isValid) { parsedRows.push({ profeNombre: profe, texto, desde, color }); okCount++; }
+    else errCount++;
+
+    const tr = document.createElement('tr');
+    tr.className = isValid ? 'row-ok' : 'row-error';
+    tr.innerHTML = `
+      <td style="opacity:0.4">${i + 1}</td>
+      <td>${esc(profe) || '<em style="opacity:0.3">vacío</em>'}</td>
+      <td>${esc(texto.slice(0, 80)) + (texto.length > 80 ? '…' : '') || '<em style="opacity:0.3">vacío</em>'}</td>
+      <td>${esc(desde) || '—'}</td>
+      <td>
+        ${color ? `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${esc(color)};vertical-align:middle;margin-right:4px"></span>${esc(color)}` : '—'}
+      </td>
+      <td><span class="badge ${isValid ? 'badge-ok' : 'badge-error'}">${isValid ? '✓ OK' : '✗ Omitir'}</span></td>
+    `;
+    previewBody.appendChild(tr);
+  });
+
+  // Resumen
+  const total = rows.length;
+  summaryBar.innerHTML = `
+    <div class="summary-pill">Total en archivo: <span>${total}</span></div>
+    <div class="summary-pill" style="border-color:rgba(181,240,211,0.3)">Válidos: <span style="color:#b5f0d3">${parsedRows.length}</span></div>
+    ${errCount ? `<div class="summary-pill" style="border-color:rgba(255,179,198,0.3)">Omitidos: <span style="color:#ffb3c6">${errCount}</span></div>` : ''}
+    ${total > 50 ? `<div class="summary-pill">Vista previa: <span>primeras 50</span></div>` : ''}
+  `;
+
+  // Si el archivo tiene más de 50 filas, incluir todas en parsedRows
+  if (rows.length > 50) {
+    parsedRows = [];
+    rows.forEach((row, i) => {
+      const profe = row['profeNombre'] || '';
+      const texto = row['texto']       || '';
+      const desde = row['desde']       || '';
+      const color = row['color']       || POSTIT_COLORS[i % POSTIT_COLORS.length];
+      if (profe && texto) parsedRows.push({ profeNombre: profe, texto, desde, color });
+    });
+  }
+
+  previewSection.classList.add('visible');
+  uploadBtn.disabled    = parsedRows.length === 0;
+  uploadLabel.textContent = `⬆ Subir ${parsedRows.length} mensaje${parsedRows.length !== 1 ? 's' : ''} a Firebase`;
+  logBox.classList.remove('visible');
+  logBox.innerHTML = '';
+}
+
+// ── Subir a Firebase ──
+uploadBtn.addEventListener('click', async () => {
+  if (!parsedRows.length) return;
+
+  uploadBtn.disabled = true;
+  spinner.classList.add('visible');
+  uploadLabel.textContent = 'Subiendo…';
+  logBox.innerHTML = '';
+  logBox.classList.add('visible');
+
+  let ok = 0, fail = 0;
+
+  for (let i = 0; i < parsedRows.length; i++) {
+    const m = parsedRows[i];
+    try {
+      await addDoc(collection(db, 'mensajes'), {
+        ...m,
+        createdAt: serverTimestamp(),
+        likes: 0
+      });
+      ok++;
+      addLog(`✓ [${i+1}] ${m.profeNombre} — ${m.desde || 'sin nombre'}`, 'ok');
+    } catch (err) {
+      fail++;
+      addLog(`✗ [${i+1}] Error: ${err.message}`, 'error');
+    }
+  }
+
+  spinner.classList.remove('visible');
+  uploadLabel.textContent = `✓ Completado: ${ok} subidos${fail ? `, ${fail} errores` : ''}`;
+  addLog(`─── Finalizado: ${ok} OK${fail ? `, ${fail} con error` : ''} ───`, 'info');
+});
+
+// ── Reset ──
+resetBtn.addEventListener('click', () => {
+  previewSection.classList.remove('visible');
+  previewBody.innerHTML  = '';
+  summaryBar.innerHTML   = '';
+  logBox.innerHTML       = '';
+  logBox.classList.remove('visible');
+  parsedRows             = [];
+  fileInput.value        = '';
+  uploadBtn.disabled     = false;
+  uploadLabel.textContent = '⬆ Subir a Firebase';
+  spinner.classList.remove('visible');
+});
+
+// ── Helpers ──
+function addLog(text, type = 'info') {
+  const line = document.createElement('div');
+  line.className = `log-${type}`;
+  line.textContent = text;
+  logBox.appendChild(line);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
