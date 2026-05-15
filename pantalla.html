@@ -6,61 +6,103 @@
   <title>Tablero en Vivo — Día del Profesor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
   <style>
     /* Layout fijo para proyección — sin scroll */
-    html, body { height: 100%; overflow: hidden; }
+    html, body { 
+      height: 100%; 
+      overflow: hidden; 
+      margin: 0; 
+      background-color: #1a1a1a; /* Color de fondo oscuro para que resalten los post-its */
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+    }
 
     .pantalla-body {
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
+
     .pantalla-header {
       flex-shrink: 0;
       padding: 16px 24px 8px;
     }
+
+    .pantalla-logo { height: 50px; margin-bottom: 8px; }
+    .pantalla-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; margin: 0; }
+    .pantalla-sub { font-size: 1.2rem; opacity: 0.8; margin: 4px 0 0; }
+
     .pantalla-board {
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap; /* Columnas automáticas */
+      align-content: flex-start;
+      gap: 20px;
+      padding: 20px 28px;
       flex: 1;
-      overflow: hidden;       /* nunca hace scroll */
-      padding: 8px 28px 0;
+      overflow: hidden;
+    }
+
+    .postit {
+      width: 280px; 
+      padding: 18px;
+      box-sizing: border-box;
+      border-radius: 2px;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
+      display: inline-block;
+      color: #333;
       transition: opacity 0.5s;
-      /* grid automático que llena el espacio disponible */
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      grid-auto-rows: minmax(160px, 1fr);
-      gap: 16px;
-      align-content: start;
     }
-    .pantalla-board .postit {
-      margin-bottom: 0;   /* el gap del grid maneja el espacio */
+
+    .postit-teacher { font-weight: bold; font-size: 0.9rem; text-transform: uppercase; opacity: 0.7; }
+    
+    .postit-msg {
+      font-family: 'Caveat', cursive;
+      font-size: 24px;
+      line-height: 1.2;
+      margin: 10px 0;
+      word-wrap: break-word;
     }
+
+    .postit-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 500;
+      opacity: 0.6;
+    }
+
     .pantalla-footer {
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 28px 10px;
+      padding: 10px 28px 20px;
     }
+
     /* Barra de progreso */
     .progress-track {
       flex: 1;
-      height: 3px;
+      height: 4px;
       background: rgba(255,255,255,0.1);
       border-radius: 2px;
-      margin: 0 16px;
+      margin: 0 20px;
       overflow: hidden;
     }
     #progress-bar {
       height: 100%;
       width: 0%;
       background: #fde87c;
-      border-radius: 2px;
     }
-    #page-indicator {
-      font-size: 12px;
-      color: rgba(255,255,255,0.3);
-      white-space: nowrap;
+
+    #page-indicator { font-size: 14px; color: rgba(255,255,255,0.5); }
+
+    /* Clase para medir */
+    .offscreen {
+      position: absolute;
+      visibility: hidden;
+      z-index: -1000;
+      top: 0;
     }
   </style>
 </head>
@@ -79,7 +121,7 @@
 
   <div class="pantalla-footer">
     <div class="pantalla-badge">
-      <span id="msg-count">0</span> mensajes en el tablero
+      <span id="msg-count">0</span> mensajes recibidos
     </div>
     <div class="progress-track">
       <div id="progress-bar"></div>
