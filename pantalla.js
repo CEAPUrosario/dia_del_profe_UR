@@ -66,127 +66,79 @@ function applyFilter() {
 
   msgCount.textContent = filteredMensajes.length;
 
-  currentPage       = 0;
-  pageStartIndices  = [0]; // reiniciar mapa de páginas al cambiar filtro
+  currentPage = 0;
   renderPage();
   startRotation();
   updateProgressBar();
 }
 
-// ─── CREAR ELEMENTO DE TARJETA ───
-function createCard(m, globalIndex) {
-  const card = document.createElement('div');
-  card.className = 'postit';
-  card.dataset.id = m.id;
+// ─── CALCULAR cuántas tarjetas caben ───
+function calcPerPage() {
+  const boardH = board.clientHeight;
+  const boardW = board.clientWidth || window.innerWidth - 56;
 
-  const colorIndex = globalIndex % POSTIT_COLORS.length;
-  const bg = m.color || POSTIT_COLORS[colorIndex];
+  const cardMinW = 240;
+  const cardMinH = 140;
 
-  card.style.background     = bg;
-  card.style.transform      = `rotate(${ROTATIONS[globalIndex % ROTATIONS.length]}deg)`;
-  card.style.animationDelay = `${(globalIndex % 20) * 0.04}s`;
+  const cols = Math.max(1, Math.floor((boardW + 16) / (cardMinW + 16)));
+  const rows = Math.max(1, Math.floor((boardH + 16) / (cardMinH + 16)));
 
-  card.innerHTML = `
-    <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
-    <div class="postit-msg">${escapeHtml(m.texto)}</div>
-    <div class="postit-footer">
-      <div class="postit-from">${escapeHtml(m.desde)}</div>
-      ${m.likes ? `<span style="font-size:13px;opacity:0.6">❤️ ${m.likes}</span>` : ''}
-    </div>
-  `;
-
-  card.addEventListener('click', () => openModal(m, bg));
-  return card;
+  return cols * rows;
 }
 
-// ─── PÁGINAS: mapa de índice de inicio por página ───
-// Se construye dinámicamente después de medir el DOM real.
-let pageStartIndices = [0]; // pageStartIndices[n] = primer índice de filteredMensajes en página n
-
 // ─── RENDERIZAR PÁGINA ACTUAL ───
-// Estrategia: renderizar tarjetas una a una, medir si se sale del board,
-// detener al primer desborde y guardar ese índice como inicio de la página siguiente.
 function renderPage() {
   if (filteredMensajes.length === 0) {
     board.innerHTML = '<div class="pantalla-empty">Aún no hay mensajes… ¡sé el primero! ✦</div>';
-    totalPages = 1;
     updateNavButtons();
     return;
   }
 
-  // Asegurar que pageStartIndices tiene entrada para currentPage
-  if (!pageStartIndices[currentPage]) pageStartIndices[currentPage] = 0;
+  const perPage = calcPerPage();
+  totalPages    = Math.max(1, Math.ceil(filteredMensajes.length / perPage));
 
-  const startIndex = pageStartIndices[currentPage];
+  if (currentPage >= totalPages) currentPage = 0;
 
-  // Fade out
-  board.style.transition = 'opacity 0.3s ease';
+  const start = currentPage * perPage;
+  const slice = filteredMensajes.slice(start, start + perPage);
+
+  pageIndicator.textContent = totalPages > 1
+    ? `Hoja ${currentPage + 1} de ${totalPages}`
+    : '';
+
+  updateNavButtons();
+
   board.style.opacity    = '0';
+  board.style.transition = 'opacity 0.45s ease';
 
-  // Esperar que termine el fade, luego poblar y medir
   setTimeout(() => {
     board.innerHTML = '';
 
-    // Insertar todas las tarjetas de esta página candidate (invisible)
-    // Las iremos removiendo si no caben
-    const cards = [];
-    for (let i = startIndex; i < filteredMensajes.length; i++) {
-      const card = createCard(filteredMensajes[i], i);
-      card.style.visibility = 'hidden';
+    slice.forEach((m, i) => {
+      const card = document.createElement('div');
+      card.className = 'postit';
+      card.dataset.id = m.id;
+
+      const bg = m.color || POSTIT_COLORS[i % POSTIT_COLORS.length];
+      card.style.background     = bg;
+      card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg)`;
+      card.style.animationDelay = `${i * 0.04}s`;
+
+      card.innerHTML = `
+        <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
+        <div class="postit-msg">${escapeHtml(m.texto)}</div>
+        <div class="postit-footer">
+          <div class="postit-from">${escapeHtml(m.desde)}</div>
+          ${m.likes ? `<span style="font-size:13px;opacity:0.6">❤️ ${m.likes}</span>` : ''}
+        </div>
+      `;
+
+      card.addEventListener('click', () => openModal(m, bg));
       board.appendChild(card);
-      cards.push({ card, i });
-    }
-
-    // Esperar un frame para que el navegador calcule el layout real
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const boardBottom = board.getBoundingClientRect().bottom;
-        let cutAt = -1; // índice donde cortamos
-
-        for (const { card, i } of cards) {
-          const cardBottom = card.getBoundingClientRect().bottom;
-
-          if (cardBottom > boardBottom + 4) {
-            // A partir de aquí no caben — remover estas y las siguientes
-            cutAt = i;
-            break;
-          }
-
-          // Cabe: hacerla visible
-          card.style.visibility = '';
-        }
-
-        if (cutAt !== -1) {
-          // Remover tarjetas que no caben
-          for (const { card, i } of cards) {
-            if (i >= cutAt) board.removeChild(card);
-          }
-          // Guardar inicio de la siguiente página
-          if (!pageStartIndices[currentPage + 1]) {
-            pageStartIndices[currentPage + 1] = cutAt;
-          }
-        } else {
-          // Todas cupieron — mostrarlas todas
-          for (const { card } of cards) card.style.visibility = '';
-          pageStartIndices = pageStartIndices.slice(0, currentPage + 1);
-        }
-
-        const allFit = cutAt === -1;
-        totalPages = allFit
-          ? pageStartIndices.length
-          : Math.max(pageStartIndices.length, currentPage + 2);
-
-        pageIndicator.textContent = totalPages > 1
-          ? `Hoja ${currentPage + 1} de ${totalPages}`
-          : '';
-
-        updateNavButtons();
-
-        // Fade in
-        board.style.opacity = '1';
-      });
     });
-  }, 320);
+
+    board.style.opacity = '1';
+  }, 380);
 }
 
 // ─── ACTUALIZAR BOTONES DE NAVEGACIÓN ───
@@ -279,8 +231,7 @@ modalOverlay.addEventListener('click', e => {
 
 // ─── RESPONSIVE: recalcular al redimensionar ───
 window.addEventListener('resize', () => {
-  currentPage      = 0;
-  pageStartIndices = [0];
+  currentPage = 0;
   renderPage();
 });
 
