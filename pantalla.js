@@ -74,11 +74,19 @@ function applyFilter() {
 
 // ─── CALCULAR cuántas tarjetas caben ───
 function calcPerPage() {
-  const boardH = board.clientHeight;
-  const boardW = board.clientWidth || window.innerWidth - 56;
+  // Usar offsetHeight del body menos header y footer para evitar que
+  // board.clientHeight devuelva 0 en algunos momentos
+  const header  = document.querySelector('.pantalla-header');
+  const footer  = document.querySelector('.pantalla-footer');
+  const boardH  = window.innerHeight
+                  - (header ? header.offsetHeight : 80)
+                  - (footer ? footer.offsetHeight : 50)
+                  - 16; // padding
+
+  const boardW  = board.clientWidth || window.innerWidth - 56;
 
   const cardMinW = 240;
-  const cardMinH = 140;
+  const cardMinH = 160; // altura promedio real de un post-it con texto
 
   const cols = Math.max(1, Math.floor((boardW + 16) / (cardMinW + 16)));
   const rows = Math.max(1, Math.floor((boardH + 16) / (cardMinH + 16)));
@@ -159,7 +167,6 @@ btnPrev.addEventListener('click', () => {
 btnNext.addEventListener('click', () => {
   if (currentPage < totalPages - 1) {
     currentPage++;
-    // Si no tenemos el índice de inicio de esta página aún, se calculará al renderizar
     renderPage();
     resetRotation();
   }
