@@ -20,26 +20,48 @@ const POSTIT_COLORS = ['#fde87c','#ffb3c6','#b5f0d3','#a8d8f8','#d4c5f9','#ffc9a
 const ROTATIONS     = [-3, -2, -1, 0, 1, 2, 3, -2.5, 1.5, -1.5];
 const SEGUNDOS_POR_HOJA = 20;
 
-let allMensajes  = [];
+let allMensajes      = [];
+let filteredMensajes = [];
+let searchTerm       = '';
+
 let currentPage  = 0;
 let totalPages   = 1;
 let rotateTimer  = null;
 
 // ─── ESCUCHAR MENSAJES EN TIEMPO REAL ───
 const q = query(collection(db, 'mensajes'), orderBy('createdAt', 'desc'));
+
 onSnapshot(q, snapshot => {
   allMensajes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  document.getElementById('msg-count').textContent = allMensajes.length;
+  applyFilter();
+});
+
+// ─── FILTRAR MENSAJES ───
+function applyFilter() {
+  const term = searchTerm.trim().toLowerCase();
+
+  if (!term) {
+    filteredMensajes = [...allMensajes];
+  } else {
+    filteredMensajes = allMensajes.filter(m =>
+      (m.profeNombre || '').toLowerCase().includes(term) ||
+      (m.desde || '').toLowerCase().includes(term)
+    );
+  }
+
+  document.getElementById('msg-count').textContent = filteredMensajes.length;
+
   currentPage = 0;
   renderPage();
   startRotation();
-});
+  updateProgressBar();
+}
 
 // ─── RENDERIZAR PÁGINA ACTUAL ───
 function renderPage() {
   const board = document.getElementById('pantalla-board');
 
-  if (allMensajes.length === 0) {
+  if (filteredMensajes.length === 0) {
     board.innerHTML = '<div class="pantalla-empty">Aún no hay mensajes… ¡sé el primero! ✦</div>';
     return;
   }
@@ -47,19 +69,20 @@ function renderPage() {
   // Calcular cuántas tarjetas caben midiendo el espacio disponible
   const boardH    = board.clientHeight || window.innerHeight - 220;
   const boardW    = board.clientWidth  || window.innerWidth  - 64;
-  const cardH     = 200; // altura estimada por tarjeta
-  const cardW     = 260; // ancho estimado por tarjeta
+  const cardH     = 200;
+  const cardW     = 260;
+
   const cols      = Math.max(1, Math.floor(boardW / (cardW + 18)));
   const rows      = Math.max(1, Math.floor(boardH / (cardH + 18)));
   const perPage   = cols * rows;
 
-  totalPages = Math.max(1, Math.ceil(allMensajes.length / perPage));
+  totalPages = Math.max(1, Math.ceil(filteredMensajes.length / perPage));
 
   // Asegurar que currentPage no se salga
   if (currentPage >= totalPages) currentPage = 0;
 
   const start = currentPage * perPage;
-  const slice = allMensajes.slice(start, start + perPage);
+  const slice = filteredMensajes.slice(start, start + perPage);
 
   // Actualizar indicador de hoja
   document.getElementById('page-indicator').textContent =
@@ -71,22 +94,34 @@ function renderPage() {
 
   setTimeout(() => {
     board.innerHTML = '';
+
     slice.forEach((m, i) => {
       const card = document.createElement('div');
+
       card.className = 'postit';
       card.dataset.id = m.id;
+
       card.style.background     = m.color || POSTIT_COLORS[i % POSTIT_COLORS.length];
       card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg)`;
       card.style.animationDelay = `${i * 0.04}s`;
+
       card.innerHTML = `
         <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
-        <div class="postit-msg">${escapeHtml(m.texto)}</div>
+
+        <div class="postit-msg">
+          ${escapeHtml(m.texto)}
+        </div>
+
         <div class="postit-footer">
           <div class="postit-from">${escapeHtml(m.desde)}</div>
+
           ${m.likes ? `<span style="font-size:13px;opacity:0.6">❤️ ${m.likes}</span>` : ''}
-        </div>`;
+        </div>
+      `;
+
       board.appendChild(card);
     });
+
     board.style.opacity = '1';
   }, 400);
 }
@@ -94,20 +129,27 @@ function renderPage() {
 // ─── ROTACIÓN AUTOMÁTICA CADA 20 SEGUNDOS ───
 function startRotation() {
   if (rotateTimer) clearInterval(rotateTimer);
-  if (totalPages <= 1) return; // no rotar si todo cabe en una hoja
+
+  if (totalPages <= 1) return;
+
   rotateTimer = setInterval(() => {
     currentPage = (currentPage + 1) % totalPages;
+
     renderPage();
     updateProgressBar();
+
   }, SEGUNDOS_POR_HOJA * 1000);
 }
 
 // ─── BARRA DE PROGRESO ───
 function updateProgressBar() {
   const bar = document.getElementById('progress-bar');
+
   if (!bar) return;
+
   bar.style.transition = 'none';
   bar.style.width = '0%';
+
   setTimeout(() => {
     bar.style.transition = `width ${SEGUNDOS_POR_HOJA}s linear`;
     bar.style.width = '100%';
@@ -120,8 +162,18 @@ window.addEventListener('resize', () => {
   renderPage();
 });
 
+// ─── BUSCADOR ───
+const searchInput = document.getElementById('search-input');
+
+searchInput.addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  applyFilter();
+});
+
 function escapeHtml(str) {
   return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
