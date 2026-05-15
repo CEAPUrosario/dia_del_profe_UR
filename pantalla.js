@@ -66,84 +66,115 @@ function applyFilter() {
 
   msgCount.textContent = filteredMensajes.length;
 
-  currentPage = 0;
+  currentPage       = 0;
+  pageStartIndices  = [0]; // reiniciar mapa de páginas al cambiar filtro
   renderPage();
   startRotation();
   updateProgressBar();
 }
 
-// ─── CALCULAR cuántas tarjetas caben ───
-// Estrategia: renderizamos en un clon oculto y contamos cuántas caben
-// sin desbordar el board.
-function calcPerPage() {
-  const boardH = board.clientHeight;
-  const boardW = board.clientWidth || window.innerWidth - 56;
+// ─── CREAR ELEMENTO DE TARJETA ───
+function createCard(m, globalIndex) {
+  const card = document.createElement('div');
+  card.className = 'postit';
+  card.dataset.id = m.id;
 
-  const cardMinW = 240;
-  const cardMinH = 140;
+  const colorIndex = globalIndex % POSTIT_COLORS.length;
+  const bg = m.color || POSTIT_COLORS[colorIndex];
 
-  const cols = Math.max(1, Math.floor((boardW + 16) / (cardMinW + 16)));
-  const rows = Math.max(1, Math.floor((boardH + 16) / (cardMinH + 16)));
+  card.style.background     = bg;
+  card.style.transform      = `rotate(${ROTATIONS[globalIndex % ROTATIONS.length]}deg)`;
+  card.style.animationDelay = `${(globalIndex % 20) * 0.04}s`;
 
-  return cols * rows;
+  card.innerHTML = `
+    <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
+    <div class="postit-msg">${escapeHtml(m.texto)}</div>
+    <div class="postit-footer">
+      <div class="postit-from">${escapeHtml(m.desde)}</div>
+      ${m.likes ? `<span style="font-size:13px;opacity:0.6">❤️ ${m.likes}</span>` : ''}
+    </div>
+  `;
+
+  card.addEventListener('click', () => openModal(m, bg));
+  return card;
 }
 
+// ─── PÁGINAS: mapa de índice de inicio por página ───
+// Se construye dinámicamente después de medir el DOM real.
+let pageStartIndices = [0]; // pageStartIndices[n] = primer índice de filteredMensajes en página n
+
 // ─── RENDERIZAR PÁGINA ACTUAL ───
+// Estrategia: renderizar tarjetas una a una, medir si se sale del board,
+// detener al primer desborde y guardar ese índice como inicio de la página siguiente.
 function renderPage() {
   if (filteredMensajes.length === 0) {
     board.innerHTML = '<div class="pantalla-empty">Aún no hay mensajes… ¡sé el primero! ✦</div>';
+    totalPages = 1;
     updateNavButtons();
     return;
   }
 
-  const perPage = calcPerPage();
-  perPageLast   = perPage;
-  totalPages    = Math.max(1, Math.ceil(filteredMensajes.length / perPage));
+  // Asegurar que pageStartIndices tiene entrada para currentPage
+  if (!pageStartIndices[currentPage]) pageStartIndices[currentPage] = 0;
 
-  if (currentPage >= totalPages) currentPage = 0;
+  const startIndex = pageStartIndices[currentPage];
 
-  const start = currentPage * perPage;
-  const slice = filteredMensajes.slice(start, start + perPage);
-
-  pageIndicator.textContent = totalPages > 1
-    ? `Hoja ${currentPage + 1} de ${totalPages}`
-    : '';
-
-  updateNavButtons();
-
-  // Animación fade
+  // Animación de salida
   board.style.opacity    = '0';
   board.style.transition = 'opacity 0.45s ease';
 
   setTimeout(() => {
     board.innerHTML = '';
-
-    slice.forEach((m, i) => {
-      const card = document.createElement('div');
-      card.className      = 'postit';
-      card.dataset.id     = m.id;
-      card.dataset.index  = start + i; // índice global para abrir modal
-
-      card.style.background     = m.color || POSTIT_COLORS[i % POSTIT_COLORS.length];
-      card.style.transform      = `rotate(${ROTATIONS[i % ROTATIONS.length]}deg)`;
-      card.style.animationDelay = `${i * 0.04}s`;
-
-      card.innerHTML = `
-        <div class="postit-teacher">${escapeHtml(m.profeNombre)}</div>
-        <div class="postit-msg">${escapeHtml(m.texto)}</div>
-        <div class="postit-footer">
-          <div class="postit-from">${escapeHtml(m.desde)}</div>
-          ${m.likes ? `<span style="font-size:13px;opacity:0.6">❤️ ${m.likes}</span>` : ''}
-        </div>
-      `;
-
-      // Abrir modal al hacer clic
-      card.addEventListener('click', () => openModal(m, card.style.background));
-
-      board.appendChild(card);
-    });
-
     board.style.opacity = '1';
+
+    const boardBottom = board.getBoundingClientRect().bottom;
+    let lastFit = startIndex - 1;
+
+    for (let i = startIndex; i < filteredMensajes.length; i++) {
+      const m    = filteredMensajes[i];
+      const card = createCard(m, i);
+
+      // Invisible mientras medimos
+      card.style.visibility = 'hidden';
+      board.appendChild(card);
+
+      // Medir si la tarjeta desborda el board
+      const cardBottom = card.getBoundingClientRect().bottom;
+
+      if (cardBottom > boardBottom + 4) {
+        // Esta tarjeta no cabe — removerla y cortar aquí
+        board.removeChild(card);
+
+        // Guardar inicio de la siguiente página si no existe
+        if (!pageStartIndices[currentPage + 1]) {
+          pageStartIndices[currentPage + 1] = i;
+        }
+        break;
+      }
+
+      // Cabe: hacerla visible
+      card.style.visibility = '';
+      lastFit = i;
+    }
+
+    // Recalcular totalPages basado en lo que sabemos
+    // Si llegamos al final sin cortar, no hay página siguiente
+    const allFit = lastFit === filteredMensajes.length - 1;
+    if (allFit) {
+      // Truncar pageStartIndices por si sobraban entradas de renders anteriores
+      pageStartIndices = pageStartIndices.slice(0, currentPage + 1);
+    }
+
+    // totalPages = páginas conocidas + 1 estimada si hay más mensajes
+    totalPages = allFit
+      ? pageStartIndices.length
+      : Math.max(pageStartIndices.length, currentPage + 2);
+
+    pageIndicator.textContent = totalPages > 1
+      ? `Hoja ${currentPage + 1} de ${totalPages}`
+      : '';
+
+    updateNavButtons();
   }, 380);
 }
 
@@ -165,6 +196,7 @@ btnPrev.addEventListener('click', () => {
 btnNext.addEventListener('click', () => {
   if (currentPage < totalPages - 1) {
     currentPage++;
+    // Si no tenemos el índice de inicio de esta página aún, se calculará al renderizar
     renderPage();
     resetRotation();
   }
@@ -236,7 +268,8 @@ modalOverlay.addEventListener('click', e => {
 
 // ─── RESPONSIVE: recalcular al redimensionar ───
 window.addEventListener('resize', () => {
-  currentPage = 0;
+  currentPage      = 0;
+  pageStartIndices = [0];
   renderPage();
 });
 
